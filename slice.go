@@ -1,0 +1,294 @@
+package x
+
+import (
+	"slices"
+	"strings"
+)
+
+// 遍历
+func ForEach[S ~[]E, E any](s S, fn func(E)) {
+	for i := range s {
+		fn(s[i])
+	}
+}
+
+// 计数
+func Count[S ~[]E, E comparable](s S, value E) int {
+	ret := 0
+	for i := range s {
+		if s[i] == value {
+			ret++
+		}
+	}
+	return ret
+}
+
+// 计数
+func CountFunc[S ~[]E, E any](s S, fn func(E) int) int {
+	ret := 0
+	for i := range s {
+		ret += fn(s[i])
+	}
+	return ret
+}
+
+// 去重
+func Distinct[S ~[]E, E comparable](s S) S {
+	if s == nil {
+		return nil
+	}
+	ret := make(S, 0, len(s))
+	m := make(map[E]struct{})
+	for i := range s {
+		if _, ok := m[s[i]]; !ok {
+			ret = append(ret, s[i])
+			m[s[i]] = struct{}{}
+		}
+	}
+	return ret
+}
+
+// 去重
+func DistinctFunc[S ~[]E, E any, C comparable](s S, fn func(E) C) S {
+	if s == nil {
+		return nil
+	}
+	ret := make(S, 0, len(s))
+	m := make(map[C]struct{})
+	for i := range s {
+		k := fn(s[i])
+		if _, ok := m[k]; !ok {
+			ret = append(ret, s[i])
+			m[k] = struct{}{}
+		}
+	}
+	return ret
+}
+
+// 映射
+func Map[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) E2) S2 {
+	if s == nil {
+		return nil
+	}
+	ret := make(S2, len(s))
+	for i := range s {
+		ret[i] = fn(s[i])
+	}
+	return ret
+}
+
+// 过滤
+func Filter[S ~[]E, E any](s S, fn func(E) bool) S {
+	if s == nil {
+		return nil
+	}
+	ret := make(S, 0, len(s))
+	for i := range s {
+		if fn(s[i]) {
+			ret = append(ret, s[i])
+		}
+	}
+	return ret
+}
+
+// 过滤+映射
+func FilterMap[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) (E2, bool)) S2 {
+	if s == nil {
+		return nil
+	}
+	ret := make(S2, 0, len(s))
+	for i := range s {
+		if v, ok := fn(s[i]); ok {
+			ret = append(ret, v)
+		}
+	}
+	return ret
+}
+
+// 展开+映射
+func Flat[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) S2) S2 {
+	if s == nil {
+		return nil
+	}
+	ret := make(S2, 0, len(s)*2)
+	for i := range s {
+		ret = append(ret, fn(s[i])...)
+	}
+	return ret
+}
+
+// 归约/聚合+映射
+func Reduce[S ~[]E, E any, T any](s S, fn func(E, T) T, initial T) T {
+	ret := initial
+	for i := range s {
+		ret = fn(s[i], ret)
+	}
+	return ret
+}
+
+// 分组
+func Group[S ~[]E, E any, C comparable](s S, fn func(E) C) map[C]S {
+	if s == nil {
+		return nil
+	}
+	ret := make(map[C]S)
+	for i := range s {
+		k := fn(s[i])
+		if _, ok := ret[k]; !ok {
+			ret[k] = make(S, 0, 2)
+		}
+		ret[k] = append(ret[k], s[i])
+	}
+	return ret
+}
+
+// 转map
+func Key[S ~[]E, E any, C comparable](s S, fn func(E) C) map[C]E {
+	if s == nil {
+		return nil
+	}
+	ret := make(map[C]E, len(s))
+	for i := len(s) - 1; i >= 0; i-- {
+		ret[fn(s[i])] = s[i]
+	}
+	return ret
+}
+
+func Zip[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s1 S1, s2 S2) []Tuple[E1, E2] {
+	l := min(len(s1), len(s2))
+	ret := make([]Tuple[E1, E2], l)
+	for i := range l {
+		ret[i].Value1 = s1[i]
+		ret[i].Value2 = s2[i]
+	}
+	return ret
+}
+
+// 并集
+func Union[S ~[]E, E comparable](s1, s2 S) S {
+	return Distinct(slices.Concat(s1, s2))
+}
+
+// 并集
+func UnionFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
+	return DistinctFunc(slices.Concat(s1, s2), fn)
+}
+
+// 交集
+func Intersection[S ~[]E, E comparable](s1, s2 S) S {
+	ret := make(S, 0, min(len(s1), len(s2)))
+	if len(s1) == 0 || len(s2) == 0 {
+		return ret
+	}
+	m := make(map[E]struct{})
+	for i := range s1 {
+		if slices.Contains(s2, s1[i]) {
+			if _, ok := m[s1[i]]; !ok {
+				ret = append(ret, s1[i])
+				m[s1[i]] = struct{}{}
+			}
+		}
+	}
+	return ret
+}
+
+// 交集
+func IntersectionFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
+	ret := make(S, 0, min(len(s1), len(s2)))
+	if len(s1) == 0 || len(s2) == 0 {
+		return ret
+	}
+	m := make(map[C]struct{})
+	for i := range s1 {
+		k := fn(s1[i])
+		if slices.ContainsFunc(s2, func(v E) bool {
+			return fn(v) == k
+		}) {
+			if _, ok := m[k]; !ok {
+				ret = append(ret, s1[i])
+				m[k] = struct{}{}
+			}
+		}
+	}
+	return ret
+}
+
+// 差集（s1-s2，属于s1但不属于s2）
+func Difference[S ~[]E, E comparable](s1, s2 S) S {
+	ret := make(S, 0, len(s1))
+	if len(s1) == 0 {
+		return ret
+	}
+	if len(s2) == 0 {
+		return Distinct(s1)
+	}
+	m := make(map[E]struct{})
+	for i := range s1 {
+		if !slices.Contains(s2, s1[i]) {
+			if _, ok := m[s1[i]]; !ok {
+				ret = append(ret, s1[i])
+				m[s1[i]] = struct{}{}
+			}
+		}
+	}
+	return ret
+}
+
+// 差集（s1-s2，属于s1但不属于s2）
+func DifferenceFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
+	ret := make(S, 0, len(s1))
+	if len(s1) == 0 {
+		return ret
+	}
+	if len(s2) == 0 {
+		return DistinctFunc(s1, fn)
+	}
+	m := make(map[C]struct{})
+	for i := range s1 {
+		k := fn(s1[i])
+		if !slices.ContainsFunc(s2, func(v E) bool {
+			return fn(v) == k
+		}) {
+			if _, ok := m[k]; !ok {
+				ret = append(ret, s1[i])
+				m[k] = struct{}{}
+			}
+		}
+	}
+	return ret
+}
+
+// 对称差（并集-交集，仅属于s1或仅属于s2）
+func SymDifference[S ~[]E, E comparable](s1, s2 S) S {
+	diff1 := Difference(s1, s2)
+	diff2 := Difference(s2, s1)
+	return append(diff1, diff2...)
+}
+
+// 对称差（并集-交集，仅属于s1或仅属于s2）
+func SymDifferenceFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
+	diff1 := DifferenceFunc(s1, s2, fn)
+	diff2 := DifferenceFunc(s2, s1, fn)
+	return append(diff1, diff2...)
+}
+
+// 转字符串
+func Join[S ~[]E, E any](s S, sep string, fn func(E) string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	if sep == "" {
+		for i := range s {
+			b.WriteString(fn(s[i]))
+		}
+	} else {
+		for i := range s {
+			if i > 0 {
+				b.WriteString(sep)
+			}
+			b.WriteString(fn(s[i]))
+		}
+	}
+	return b.String()
+}
