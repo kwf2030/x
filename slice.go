@@ -24,8 +24,28 @@ func Count[S ~[]E, E comparable](s S, value E) int {
 }
 
 // 计数
-func CountFunc[S ~[]E, E any](s S, fn func(E) int) int {
+func CountFunc[S ~[]E, E any](s S, fn func(E) bool) int {
 	ret := 0
+	for i := range s {
+		if fn(s[i]) {
+			ret++
+		}
+	}
+	return ret
+}
+
+// 累加
+func Sum[S ~[]E, E Number](s S, value E) E {
+	var ret E
+	for i := range s {
+		ret += s[i]
+	}
+	return ret
+}
+
+// 累加
+func SumFunc[S ~[]E, E any, T Number](s S, fn func(E) T) T {
+	var ret T
 	for i := range s {
 		ret += fn(s[i])
 	}
@@ -65,18 +85,6 @@ func DistinctFunc[S ~[]E, E any, C comparable](s S, fn func(E) C) S {
 	return ret
 }
 
-// 映射
-func Map[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) E2) S2 {
-	if s == nil {
-		return nil
-	}
-	ret := make(S2, len(s))
-	for i := range s {
-		ret[i] = fn(s[i])
-	}
-	return ret
-}
-
 // 过滤
 func Filter[S ~[]E, E any](s S, fn func(E) bool) S {
 	if s == nil {
@@ -87,6 +95,18 @@ func Filter[S ~[]E, E any](s S, fn func(E) bool) S {
 		if fn(s[i]) {
 			ret = append(ret, s[i])
 		}
+	}
+	return ret
+}
+
+// 映射
+func Map[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) E2) S2 {
+	if s == nil {
+		return nil
+	}
+	ret := make(S2, len(s))
+	for i := range s {
+		ret[i] = fn(s[i])
 	}
 	return ret
 }
@@ -106,11 +126,11 @@ func FilterMap[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) (E2, bool))
 }
 
 // 展开+映射
-func Flat[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) S2) S2 {
+func FlatMap[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) S2) S2 {
 	if s == nil {
 		return nil
 	}
-	ret := make(S2, 0, len(s)*2)
+	ret := make(S2, 0)
 	for i := range s {
 		ret = append(ret, fn(s[i])...)
 	}
@@ -118,10 +138,10 @@ func Flat[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) S2) S2 {
 }
 
 // 归约/聚合+映射
-func Reduce[S ~[]E, E any, T any](s S, fn func(E, T) T, initial T) T {
+func Reduce[S ~[]E, E any, T any](s S, fn func(T, E) T, initial T) T {
 	ret := initial
 	for i := range s {
-		ret = fn(s[i], ret)
+		ret = fn(ret, s[i])
 	}
 	return ret
 }
@@ -148,7 +168,7 @@ func Key[S ~[]E, E any, C comparable](s S, fn func(E) C) map[C]E {
 		return nil
 	}
 	ret := make(map[C]E, len(s))
-	for i := len(s) - 1; i >= 0; i-- {
+	for i := range s {
 		ret[fn(s[i])] = s[i]
 	}
 	return ret
@@ -176,16 +196,20 @@ func UnionFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
 
 // 交集
 func Intersection[S ~[]E, E comparable](s1, s2 S) S {
-	ret := make(S, 0, min(len(s1), len(s2)))
 	if len(s1) == 0 || len(s2) == 0 {
-		return ret
+		return make(S, 0, 0)
 	}
-	m := make(map[E]struct{})
+	set := make(map[E]struct{}, len(s2))
+	for i := range s2 {
+		set[s2[i]] = struct{}{}
+	}
+	ret := make(S, 0, min(len(s1), len(s2)))
+	seen := make(map[E]struct{})
 	for i := range s1 {
-		if slices.Contains(s2, s1[i]) {
-			if _, ok := m[s1[i]]; !ok {
+		if _, ok := set[s1[i]]; ok {
+			if _, dup := seen[s1[i]]; !dup {
 				ret = append(ret, s1[i])
-				m[s1[i]] = struct{}{}
+				seen[s1[i]] = struct{}{}
 			}
 		}
 	}
@@ -194,19 +218,21 @@ func Intersection[S ~[]E, E comparable](s1, s2 S) S {
 
 // 交集
 func IntersectionFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
-	ret := make(S, 0, min(len(s1), len(s2)))
 	if len(s1) == 0 || len(s2) == 0 {
-		return ret
+		return make(S, 0, 0)
 	}
-	m := make(map[C]struct{})
+	set := make(map[C]struct{}, len(s2))
+	for i := range s2 {
+		set[fn(s2[i])] = struct{}{}
+	}
+	ret := make(S, 0, min(len(s1), len(s2)))
+	seen := make(map[C]struct{})
 	for i := range s1 {
-		k := fn(s1[i])
-		if slices.ContainsFunc(s2, func(v E) bool {
-			return fn(v) == k
-		}) {
-			if _, ok := m[k]; !ok {
+		v := fn(s1[i])
+		if _, ok := set[v]; ok {
+			if _, dup := seen[v]; !dup {
 				ret = append(ret, s1[i])
-				m[k] = struct{}{}
+				seen[v] = struct{}{}
 			}
 		}
 	}
@@ -215,19 +241,23 @@ func IntersectionFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
 
 // 差集（s1-s2，属于s1但不属于s2）
 func Difference[S ~[]E, E comparable](s1, s2 S) S {
-	ret := make(S, 0, len(s1))
 	if len(s1) == 0 {
-		return ret
+		return make(S, 0, 0)
 	}
 	if len(s2) == 0 {
 		return Distinct(s1)
 	}
-	m := make(map[E]struct{})
+	set := make(map[E]struct{}, len(s2))
+	for i := range s2 {
+		set[s2[i]] = struct{}{}
+	}
+	ret := make(S, 0, len(s1))
+	seen := make(map[E]struct{})
 	for i := range s1 {
-		if !slices.Contains(s2, s1[i]) {
-			if _, ok := m[s1[i]]; !ok {
+		if _, ok := set[s1[i]]; !ok {
+			if _, dup := seen[s1[i]]; !dup {
 				ret = append(ret, s1[i])
-				m[s1[i]] = struct{}{}
+				seen[s1[i]] = struct{}{}
 			}
 		}
 	}
@@ -236,22 +266,24 @@ func Difference[S ~[]E, E comparable](s1, s2 S) S {
 
 // 差集（s1-s2，属于s1但不属于s2）
 func DifferenceFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
-	ret := make(S, 0, len(s1))
 	if len(s1) == 0 {
-		return ret
+		return make(S, 0, 0)
 	}
 	if len(s2) == 0 {
 		return DistinctFunc(s1, fn)
 	}
-	m := make(map[C]struct{})
+	set := make(map[C]struct{}, len(s2))
+	for i := range s2 {
+		set[fn(s2[i])] = struct{}{}
+	}
+	ret := make(S, 0, len(s1))
+	seen := make(map[C]struct{})
 	for i := range s1 {
-		k := fn(s1[i])
-		if !slices.ContainsFunc(s2, func(v E) bool {
-			return fn(v) == k
-		}) {
-			if _, ok := m[k]; !ok {
+		v := fn(s1[i])
+		if _, ok := set[v]; !ok {
+			if _, dup := seen[v]; !dup {
 				ret = append(ret, s1[i])
-				m[k] = struct{}{}
+				seen[v] = struct{}{}
 			}
 		}
 	}
@@ -273,7 +305,7 @@ func SymDifferenceFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
 }
 
 // 转字符串
-func Join[S ~[]E, E any](s S, sep string, fn func(E) string) string {
+func JoinFunc[S ~[]E, E any](s S, sep string, fn func(E) string) string {
 	if len(s) == 0 {
 		return ""
 	}
