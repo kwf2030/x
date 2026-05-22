@@ -183,7 +183,7 @@ func Zip[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s1 S1, s2 S2) []Tuple[E1, E2] {
 	l := min(len(s1), len(s2))
 	ret := make([]Tuple[E1, E2], l)
 	for i := range l {
-		ret[i].V1, ret[i].V2 = s1[i], s2[i]
+		ret[i].Val1, ret[i].Val2 = s1[i], s2[i]
 	}
 	return ret
 }

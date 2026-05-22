@@ -1,29 +1,29 @@
 package x
 
 type Tuple[T1, T2 any] struct {
-	V1 T1
-	V2 T2
+	Val1 T1
+	Val2 T2
 }
 
 type Tuple3[T1, T2, T3 any] struct {
-	V1 T1
-	V2 T2
-	V3 T3
+	Val1 T1
+	Val2 T2
+	Val3 T3
 }
 
 type Tuple4[T1, T2, T3, T4 any] struct {
-	V1 T1
-	V2 T2
-	V3 T3
-	V4 T4
+	Val1 T1
+	Val2 T2
+	Val3 T3
+	Val4 T4
 }
 
 type Tuple5[T1, T2, T3, T4, T5 any] struct {
-	V1 T1
-	V2 T2
-	V3 T3
-	V4 T4
-	V5 T5
+	Val1 T1
+	Val2 T2
+	Val3 T3
+	Val4 T4
+	Val5 T5
 }
 
 func NewTuple[T1, T2 any](v1 T1, v2 T2) Tuple[T1, T2] {
