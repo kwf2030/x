@@ -2,8 +2,11 @@ package x
 
 import (
 	"errors"
+	"runtime"
 	"time"
 )
+
+const IsWindows = runtime.GOOS == "windows"
 
 const (
 	DateFormat1 = "2006-01-02"

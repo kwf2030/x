@@ -85,6 +85,18 @@ func DistinctFunc[S ~[]E, E any, C comparable](s S, fn func(E) C) S {
 	return ret
 }
 
+// 映射
+func Map[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) E2) S2 {
+	if s == nil {
+		return nil
+	}
+	ret := make(S2, len(s))
+	for i := range s {
+		ret[i] = fn(s[i])
+	}
+	return ret
+}
+
 // 过滤
 func Filter[S ~[]E, E any](s S, fn func(E) bool) S {
 	if s == nil {
@@ -95,18 +107,6 @@ func Filter[S ~[]E, E any](s S, fn func(E) bool) S {
 		if fn(s[i]) {
 			ret = append(ret, s[i])
 		}
-	}
-	return ret
-}
-
-// 映射
-func Map[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) E2) S2 {
-	if s == nil {
-		return nil
-	}
-	ret := make(S2, len(s))
-	for i := range s {
-		ret[i] = fn(s[i])
 	}
 	return ret
 }
@@ -123,6 +123,11 @@ func FilterMap[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s S1, fn func(E1) (E2, bool))
 		}
 	}
 	return ret
+}
+
+// 展开
+func Flat[S ~[]E, E any](s S, fn func(E) S) S {
+	return FlatMap(s, fn)
 }
 
 // 展开+映射
@@ -178,8 +183,7 @@ func Zip[S1 ~[]E1, E1 any, S2 ~[]E2, E2 any](s1 S1, s2 S2) []Tuple[E1, E2] {
 	l := min(len(s1), len(s2))
 	ret := make([]Tuple[E1, E2], l)
 	for i := range l {
-		ret[i].Value1 = s1[i]
-		ret[i].Value2 = s2[i]
+		ret[i].V1, ret[i].V2 = s1[i], s2[i]
 	}
 	return ret
 }
