@@ -2,11 +2,14 @@ package x
 
 import (
 	"errors"
+	"path/filepath"
 	"runtime"
 	"time"
 )
 
 const IsWindows = runtime.GOOS == "windows"
+
+const PathSeparator = string(filepath.Separator)
 
 const (
 	DateFormat1 = "2006-01-02"

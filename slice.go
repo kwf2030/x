@@ -201,7 +201,7 @@ func UnionFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
 // 交集
 func Intersection[S ~[]E, E comparable](s1, s2 S) S {
 	if len(s1) == 0 || len(s2) == 0 {
-		return make(S, 0, 0)
+		return make(S, 0)
 	}
 	set := make(map[E]struct{}, len(s2))
 	for i := range s2 {
@@ -223,7 +223,7 @@ func Intersection[S ~[]E, E comparable](s1, s2 S) S {
 // 交集
 func IntersectionFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
 	if len(s1) == 0 || len(s2) == 0 {
-		return make(S, 0, 0)
+		return make(S, 0)
 	}
 	set := make(map[C]struct{}, len(s2))
 	for i := range s2 {
@@ -246,7 +246,7 @@ func IntersectionFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
 // 差集（s1-s2，属于s1但不属于s2）
 func Difference[S ~[]E, E comparable](s1, s2 S) S {
 	if len(s1) == 0 {
-		return make(S, 0, 0)
+		return make(S, 0)
 	}
 	if len(s2) == 0 {
 		return Distinct(s1)
@@ -271,7 +271,7 @@ func Difference[S ~[]E, E comparable](s1, s2 S) S {
 // 差集（s1-s2，属于s1但不属于s2）
 func DifferenceFunc[S ~[]E, E any, C comparable](s1, s2 S, fn func(E) C) S {
 	if len(s1) == 0 {
-		return make(S, 0, 0)
+		return make(S, 0)
 	}
 	if len(s2) == 0 {
 		return DistinctFunc(s1, fn)
