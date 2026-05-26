@@ -548,6 +548,9 @@ func (p Path) ReadLines() []string {
 	for sc.Scan() {
 		lines = append(lines, sc.Text())
 	}
+	if err = sc.Err(); err != nil {
+		return nil
+	}
 	return lines
 }
 
@@ -564,6 +567,7 @@ func (p Path) ReadLinesFunc(fn func(line string) error) {
 			break
 		}
 	}
+	_ = sc.Err()
 }
 
 // 读取 JSON，文件不存在或无权限等返回 nil
