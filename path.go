@@ -405,7 +405,7 @@ func copyFile(dest, src string) error {
 	return err
 }
 
-func copy(dest, src string) error {
+func copyFS(dest, src string) error {
 	srcInfo, err := os.Stat(src)
 	if err != nil {
 		return err
@@ -439,13 +439,13 @@ func copy(dest, src string) error {
 //	2、如果 dest 存在且是文件，则覆盖此文件，复制后目录结构为 /dest/xyz，xyz 就是 abc 文件，
 //	3、如果 dest 不存在，则将 dest 视为文件路径，复制后目录结构为 /dest/xyz，xyz 就是 abc 文件
 func (p Path) Copy(dest string) {
-	copy(filepath.Join(dest, filepath.Base(p.value)), p.value)
+	copyFS(filepath.Join(dest, filepath.Base(p.value)), p.value)
 }
 
 // 跟 Copy 唯一的区别是复制的目录结构不一样，
 // CopyAll 是把 p 下的所有子目录和文件复制到 dest 下，而 Copy 是直接把 p 本身复制到 dest 下
 func (p Path) CopyAll(dest string) {
-	copy(dest, p.value)
+	copyFS(dest, p.value)
 }
 
 // 移动文件或目录，不支持跨文件系统（可以用复制+删除）
