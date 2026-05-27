@@ -369,7 +369,7 @@ func (p Path) OpenWithTrunc() *os.File {
 
 // 把 src 下的所有目录和文件都复制到 dest 下（不是复制 src 目录本身），
 // src 和 dest 都是目录，已存在的文件会被覆盖
-func copyDir(dest, src string) error {
+func (p Path) copyDir(dest, src string) error {
 	return filepath.WalkDir(src, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || path == src {
 			return nil
@@ -380,14 +380,14 @@ func copyDir(dest, src string) error {
 		}
 		dst := filepath.Join(dest, rel)
 		if !d.IsDir() {
-			return copyFile(dst, path)
+			return p.copyFile(dst, path)
 		}
 		return nil
 	})
 }
 
 // 把 src 复制到 dest，src 和 dest 都是文件，已存在则覆盖
-func copyFile(dest, src string) error {
+func (p Path) copyFile(dest, src string) error {
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return err
@@ -405,28 +405,28 @@ func copyFile(dest, src string) error {
 	return err
 }
 
-func copyFS(dest, src string) error {
-	srcInfo, err := os.Stat(src)
+func (p Path) copy(dest string) error {
+	srcInfo, err := os.Stat(p.value)
 	if err != nil {
 		return err
 	}
 	destInfo, err := os.Stat(dest)
 	if srcInfo.IsDir() {
 		if (err != nil && os.IsNotExist(err)) || (err == nil && destInfo.IsDir()) {
-			return copyDir(dest, src)
+			return p.copyDir(dest, p.value)
 		}
 		return nil
 	}
 	if err != nil {
 		if os.IsNotExist(err) {
-			return copyFile(dest, src)
+			return p.copyFile(dest, p.value)
 		}
 		return nil
 	}
 	if destInfo.IsDir() {
-		return copyFile(filepath.Join(dest, filepath.Base(src)), src)
+		return p.copyFile(filepath.Join(dest, filepath.Base(p.value)), p.value)
 	} else {
-		return copyFile(dest, src)
+		return p.copyFile(dest, p.value)
 	}
 }
 
@@ -439,13 +439,13 @@ func copyFS(dest, src string) error {
 //	2、如果 dest 存在且是文件，则覆盖此文件，复制后目录结构为 /dest/xyz，xyz 就是 abc 文件，
 //	3、如果 dest 不存在，则将 dest 视为文件路径，复制后目录结构为 /dest/xyz，xyz 就是 abc 文件
 func (p Path) Copy(dest string) {
-	copyFS(filepath.Join(dest, filepath.Base(p.value)), p.value)
+	p.copy(filepath.Join(dest, filepath.Base(p.value)))
 }
 
 // 跟 Copy 唯一的区别是复制的目录结构不一样，
 // CopyAll 是把 p 下的所有子目录和文件复制到 dest 下，而 Copy 是直接把 p 本身复制到 dest 下
 func (p Path) CopyAll(dest string) {
-	copyFS(dest, p.value)
+	p.copy(dest)
 }
 
 // 移动文件或目录，不支持跨文件系统（可以用复制+删除）
