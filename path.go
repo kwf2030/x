@@ -608,7 +608,7 @@ func (p Path) WriteJson(v any) {
 	}
 }
 
-// 追加字节，文件存在则覆盖，不存在则创建
+// 追加字节，文件存在则追加，不存在则创建
 func (p Path) AppendBytes(data []byte) {
 	if err := os.MkdirAll(filepath.Dir(p.value), DirPerm); err != nil {
 		return
@@ -621,7 +621,7 @@ func (p Path) AppendBytes(data []byte) {
 	f.Write(data)
 }
 
-// 追加文本，文件存在则覆盖，不存在则创建
+// 追加文本，文件存在则追加，不存在则创建
 func (p Path) AppendText(text string) {
 	p.AppendBytes([]byte(text))
 }
