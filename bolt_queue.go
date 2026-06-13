@@ -36,9 +36,9 @@ func (q *BboltQueue) PushFirst(data []byte) error {
 	return BboltUpdate(q.db, q.bucket, func(tx *bbolt.Tx, b *bbolt.Bucket) error {
 		var id int64
 		if key, _ := b.Cursor().First(); key != nil {
-			id = Btoi64[int64](key)
+			id = BytesToInt64[int64](key)
 		}
-		return b.Put(I64tob(id-1), data)
+		return b.Put(Int64ToBytes(id-1), data)
 	})
 }
 
@@ -50,7 +50,7 @@ func (q *BboltQueue) PushLast(data []byte) error {
 		if id, err := b.NextSequence(); err != nil {
 			return err
 		} else {
-			return b.Put(I64tob(id), data)
+			return b.Put(Int64ToBytes(id), data)
 		}
 	})
 }
@@ -161,11 +161,11 @@ func (q *BboltQueue) BatchPushFirst(data [][]byte) error {
 	return BboltUpdate(q.db, q.bucket, func(tx *bbolt.Tx, b *bbolt.Bucket) error {
 		var id int64
 		if key, _ := b.Cursor().First(); key != nil {
-			id = Btoi64[int64](key)
+			id = BytesToInt64[int64](key)
 		}
 		for i := range data {
 			if len(data[i]) != 0 {
-				if err := b.Put(I64tob(id-int64(i)-1), data[i]); err != nil {
+				if err := b.Put(Int64ToBytes(id-int64(i)-1), data[i]); err != nil {
 					return err
 				}
 			}
@@ -184,7 +184,7 @@ func (q *BboltQueue) BatchPushLast(data [][]byte) error {
 				if id, err := b.NextSequence(); err != nil {
 					return err
 				} else {
-					return b.Put(I64tob(id), data[i])
+					return b.Put(Int64ToBytes(id), data[i])
 				}
 			}
 		}
